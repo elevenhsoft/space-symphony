@@ -1,10 +1,16 @@
 use crate::{Response, APP_ID};
-use std::sync::Arc;
 
 use anyhow::Error;
-use iced::widget::{button, Container};
-use iced::{executor, Application, Command, Element, Renderer, Theme};
-use iced_aw::menu::{MenuBar, MenuTree};
+use iced_aw::menu::menu_tree::MenuTree;
+use std::sync::Arc;
+
+use iced::widget::button::Appearance;
+use iced::widget::{button, Column, Container};
+use iced::{
+    executor, theme, Application, Background, Color, Command, Element, Length, Renderer, Theme,
+};
+use iced_aw::menu::MenuBar;
+
 use rspotify::{ClientCredsSpotify, Config, Token, TokenCallback};
 use serde::{Deserialize, Serialize};
 use spotify_web_api::SpotifyWeb;
@@ -31,6 +37,7 @@ pub enum AppMessage {
 pub enum Buttons {
     Login,
     Logout,
+    Quit,
 }
 
 pub struct SpaceSymphony;
@@ -61,47 +68,36 @@ impl Application for SpaceSymphony {
             AppMessage::Clicked(btn) => match btn {
                 Buttons::Login => Command::perform(Self::authorize(), |_| AppMessage::LoggedIn),
                 Buttons::Logout => Command::none(),
+                Buttons::Quit => std::process::exit(0),
             },
             AppMessage::LoggedIn => Command::none(),
         }
     }
 
     fn view(&self) -> Element<'_, Self::Message, Renderer<Self::Theme>> {
-        let sub_2 = MenuTree::with_children(
-            button("Sub Menu 2"),
-            vec![
-                MenuTree::new(button("item_1")),
-                MenuTree::new(button("item_2")),
-                MenuTree::new(button("item_3")),
-            ],
-        );
-
-        let sub_1 = MenuTree::with_children(
-            button("Sub Menu 1"),
-            vec![
-                MenuTree::new(button("item_1")),
-                sub_2,
-                MenuTree::new(button("item_2")),
-                MenuTree::new(button("item_3")),
-            ],
-        );
-
         let root_1 = MenuTree::with_children(
-            button("File"),
-            vec![
-                MenuTree::new(button("item_1")),
-                MenuTree::new(button("item_2")),
-                sub_1,
-                MenuTree::new(button("item_3")),
-            ],
+            button("File").style(theme::Button::Custom(Box::new(TopMenuButton))),
+            vec![MenuTree::new(
+                button("Quit")
+                    .style(theme::Button::Custom(Box::new(TopMenuButton)))
+                    .width(Length::Fill)
+                    .on_press(AppMessage::Clicked(Buttons::Quit)),
+            )],
         );
 
-        let root_2 =
-            MenuTree::with_children(button("Spotify"), vec![MenuTree::new(self.login_btn())]);
+        let root_2 = MenuTree::with_children(
+            button("Spotify").style(theme::Button::Custom(Box::new(TopMenuButton))),
+            vec![MenuTree::new(self.login_btn())],
+        );
 
-        let menu_bar = MenuBar::new(vec![root_1, root_2]);
+        let menu_bar = MenuBar::new(vec![root_1, root_2]).spacing(10.).padding(10);
+        let col = Column::new().push(menu_bar);
 
-        Container::new(menu_bar).into()
+        Container::new(col)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .padding(30)
+            .into()
     }
 }
 
@@ -161,12 +157,65 @@ impl SpaceSymphony {
 
         if state {
             button("logout")
+                .style(theme::Button::Custom(Box::new(TopMenuButton)))
+                .width(Length::Fill)
                 .on_press(AppMessage::Clicked(Buttons::Logout))
                 .into()
         } else {
             button("login")
+                .style(theme::Button::Custom(Box::new(TopMenuButton)))
+                .width(Length::Fill)
                 .on_press(AppMessage::Clicked(Buttons::Login))
                 .into()
+        }
+    }
+}
+
+struct TopMenuButton;
+
+impl button::StyleSheet for TopMenuButton {
+    type Style = Theme;
+
+    fn active(&self, _style: &Self::Style) -> Appearance {
+        button::Appearance {
+            background: Some(Background::Color(Color::TRANSPARENT)),
+            text_color: Color::WHITE,
+            ..Default::default()
+        }
+    }
+
+    fn disabled(&self, style: &Self::Style) -> Appearance {
+        let active = self.active(style);
+
+        Appearance {
+            shadow_offset: iced::Vector::default(),
+            background: active.background.map(|background| match background {
+                Background::Color(color) => Background::Color(Color {
+                    a: color.a * 0.5,
+                    ..color
+                }),
+                Background::Gradient(gradient) => Background::Gradient(gradient.mul_alpha(0.5)),
+            }),
+            text_color: Color {
+                a: active.text_color.a * 0.5,
+                ..active.text_color
+            },
+            ..active
+        }
+    }
+
+    fn hovered(&self, style: &Self::Style) -> Appearance {
+        button::Appearance {
+            background: Some(Background::Color(Color::from_rgb(0.6, 0.6, 0.6))),
+            text_color: Color::WHITE,
+            ..self.active(style)
+        }
+    }
+
+    fn pressed(&self, style: &Self::Style) -> Appearance {
+        Appearance {
+            shadow_offset: iced::Vector::default(),
+            ..self.active(style)
         }
     }
 }

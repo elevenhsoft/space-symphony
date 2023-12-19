@@ -10,7 +10,7 @@ use axum::{routing::get, Json, Router};
 use gui::{AuthState, SpaceConfig, SpaceSymphony};
 use iced::{Application, Settings};
 
-const APP_ID: &str = "space.symphony";
+const APP_ID: &str = "space-symphony";
 
 #[derive(Clone, Deserialize, Serialize)]
 struct DurationSecs(i64);

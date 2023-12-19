@@ -7,8 +7,18 @@ edition = "2021"
 anyhow = "1.0.75"
 axum = "0.7.2"
 confy = "0.5.1"
-iced = { version = "0.10.0", features = ["image", "lazy", "tokio"] }
-iced_aw = { version = "0.7.0", default-features = false, features = ["badge", "menu"] }
+iced = { version = "0.10.0", features = [
+  "advanced",
+  "image",
+  "tokio",
+  "canvas",
+] }
+iced_aw = { version = "0.7.0", default-features = false, features = [
+  "badge",
+  "card",
+  "menu",
+  "modal",
+] }
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.108"
 spotify-web-api = { path = "../spotify-web-api" }
